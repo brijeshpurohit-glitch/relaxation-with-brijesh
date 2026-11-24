@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relax Your Body &amp; Mind with brijesh</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#d8f3dc,#b7e4c7);min-height:100vh;text-align:center;color:#245c46}.container{max-width:650px;margin:auto;padding:35px 18px 60px}h1{font-size:clamp(25px,6vw,32px)}h2{font-size:21px}p{line-height:1.65}button{background:#40916c;color:white;border:0;padding:13px 19px;border-radius:12px;font-size:17px;margin:7px;cursor:pointer;max-width:100%}button:active{background:#276749}button:focus-visible,select:focus-visible{outline:3px solid #245c46;outline-offset:3px}select{font-size:17px;padding:11px;border:1px solid #40916c;border-radius:9px;background:white;color:#245c46}.lesson-button{display:block;width:100%;max-width:410px;margin:12px auto}.card{background:rgba(255,255,255,.72);border-radius:16px;padding:18px;margin:20px auto}#circle{width:140px;height:140px;margin:30px auto;border-radius:50%;background:#74c69d;display:flex;align-items:center;justify-content:center;font-size:23px;color:white;transition:transform 4s ease-in-out}#instruction{min-height:55px;font-size:19px}#status{font-size:14px;min-height:20px}.home-bar{position:sticky;top:0;z-index:10;background:#d8f3dc;padding:8px 4px;border-radius:0 0 15px 15px;box-shadow:0 2px 8px #245c4625}.home-bar button{display:block;width:100%;margin:0;font-weight:bold}footer{margin-top:30px;font-size:13px;opacity:.8}
+</style>
+</head>
+<body><main class="container" id="app"></main>
+<script>
+'use strict';
+const app=document.getElementById('app');
+let language='en-IN',currentLesson=0,stepIndex=0,breathingTimer=null,breathingStep=0;
+const lessons={
+2:{name:'Progressive Muscle Relaxation',intro:'Relax your body, one muscle group at a time.',steps:[
+['Gently tense your hands for 3 seconds, then release.','अपने हाथों को तीन सेकंड के लिए हल्का कसें, फिर ढीला छोड़ दें।'],
+['Raise your shoulders gently, then relax them.','अपने कंधों को धीरे से ऊपर उठाएँ, फिर आराम दें।'],
+['Tighten your legs gently, then release.','अपने पैरों की मांसपेशियों को हल्का कसें, फिर ढीला छोड़ दें।'],
+['Soften your forehead, jaw and facial muscles.','अपने माथे, जबड़े और चेहरे की मांसपेशियों को ढीला छोड़ दें।'],
+['Relax your whole body and breathe naturally.','अपने पूरे शरीर को आराम दें और स्वाभाविक रूप से साँस लें।']]},
+3:{name:'Guided Mind Relaxation',intro:'Relax your mind and enjoy a peaceful moment.',steps:[
+['Sit comfortably and relax your shoulders.','आराम से बैठें और अपने कंधों को ढीला छोड़ दें।'],
+['Breathe slowly and gently.','धीरे और आराम से साँस लें।'],
+['Imagine a peaceful garden filled with flowers.','फूलों से भरे एक शांत बगीचे की कल्पना करें।'],
+['Allow your thoughts to pass without judging them.','अपने विचारों को बिना परखे आने और जाने दें।'],
+['Enjoy this peaceful moment. Open your eyes whenever you feel ready.','इस शांत पल का आनंद लें। जब सहज महसूस हो, अपनी आँखें खोलें।']]},
+4:{name:'Peaceful Visualization',intro:'Welcome to your peaceful imagination journey.',steps:[
+['Sit comfortably and relax your shoulders.','आराम से बैठें और अपने कंधों को ढीला छोड़ दें।'],
+['Imagine yourself sitting in a beautiful, peaceful garden.','कल्पना करें कि आप एक सुंदर, शांत बगीचे में बैठे हैं।'],
+['Picture colourful flowers, green trees, and gentle sunlight.','रंग-बिरंगे फूल, हरे पेड़ और हल्की धूप की कल्पना करें।'],
+['Imagine a cool breeze touching your face. Breathe slowly and naturally.','कल्पना करें कि ठंडी हवा आपके चेहरे को छू रही है। धीरे और सहज रूप से साँस लें।'],
+['Enjoy this peaceful place for a few moments. Feel calm and refreshed.','कुछ पल इस शांत जगह का आनंद लें। शांति और ताजगी महसूस करें।']]},
+5:{name:'Mindful Awareness',intro:'Notice the present moment with kindness.',steps:[
+['Sit comfortably and notice your natural breathing.','आराम से बैठें और अपनी स्वाभाविक साँसों पर ध्यान दें।'],
+['Notice the feeling of your feet resting on the ground.','महसूस करें कि आपके पैर जमीन पर टिके हैं।'],
+['Listen gently to the sounds around you.','अपने आसपास की आवाज़ों को शांति से सुनें।'],
+['When your mind wanders, gently return attention to your breath.','जब मन भटके, तो धीरे से ध्यान वापस साँसों पर लाएँ।'],
+['Take one gentle breath and return to your day when ready.','एक सहज साँस लें और तैयार होने पर अपने काम में लौटें।']]}
+};
+let autoTimer=null,runId=0,playing=false,paused=false,breathCount=0;
+function hindi(){return language==='hi-IN'}
+function speechAvailable(){return 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window}
+function clearAuto(){if(autoTimer!==null){clearTimeout(autoTimer);autoTimer=null}}
+function stopVoice(){if(speechAvailable())window.speechSynthesis.cancel()}
+function stopTimer(){if(breathingTimer!==null){clearInterval(breathingTimer);breathingTimer=null}}
+function stopAll(){runId++;playing=false;paused=false;clearAuto();stopTimer();stopVoice()}
+function status(t){const el=document.getElementById('status');if(el)el.textContent=t}
+function controls(){return `<div class="card"><label for="voiceLanguage">Preferred language / पसंदीदा भाषा:</label><br><br><select id="voiceLanguage" onchange="setLanguage(this.value)"><option value="en-IN" ${!hindi()?'selected':''}>English</option><option value="hi-IN" ${hindi()?'selected':''}>हिन्दी (भारत)</option></select><br><button onclick="testVoice()">🔊 Test Voice Guidance</button><p id="status" role="status"></p></div>`}
+function showHome(){stopAll();currentLesson=0;window.scrollTo(0,0);app.innerHTML=`<h1>🌿 Relax Your Body &amp; Mind</h1><h2>with brijesh</h2><p>Welcome to your peaceful journey.</p><p>Relax your body, calm your mind, and find inner peace.</p>${[1,2,3,4,5].map(n=>`<button class="lesson-button" onclick="openLesson(${n})">Lesson ${n} – ${n===1?'Gentle Breathing':lessons[n].name} (Free)</button>`).join('')}<h3>🌿 Smart Relaxation Observer</h3>${controls()}<footer>Relax gently, at your own pace.</footer>`}
+function setLanguage(value){stopAll();language=value;const p=document.getElementById('instruction');if(p)p.textContent=hindi()?'आरंभ करने के लिए Start दबाएँ।':'Press Start to begin.';status('')}
+function openLesson(n){stopAll();window.scrollTo(0,0);currentLesson=n;stepIndex=0;breathingStep=0;breathCount=0;const bar=`<nav class="home-bar"><button onclick="showHome()">🏠 Home / मुख्य मेनू</button></nav>`;const actions=`<button onclick="startLesson()">▶ Start / शुरू करें</button><button onclick="pauseLesson()">⏸ Pause / रोकें</button><button onclick="resumeLesson()">▶ Resume / जारी रखें</button><button onclick="stopLesson()">⏹ Stop / बंद करें</button>`;if(n===1){app.innerHTML=`${bar}<h1>🌿 Gentle Breathing</h1><h2>Lesson 1 – Free</h2><p>Sit comfortably and relax your shoulders.</p><div class="card"><p id="instruction">${hindi()?'शुरू करने के लिए Start दबाएँ।':'Press Start to begin.'}</p><div id="circle">Breathe</div>${actions}</div>${controls()}`;return}const lesson=lessons[n];app.innerHTML=`${bar}<h1>🌿 ${lesson.name}</h1><h2>Lesson ${n} – Free</h2><p>${lesson.intro}</p><div class="card"><p id="instruction">${hindi()?'सभी पाँच चरण सुनने के लिए Start दबाएँ।':'Press Start to hear all five steps.'}</p>${actions}<p style="font-size:14px">${hindi()?'हर चरण के बाद कुछ सेकंड का विराम होगा।':'There will be a short pause between steps.'}</p></div>${controls()}`}
+function speakText(message,done,token){if(!speechAvailable()){status('Voice is not supported in this browser.');if(done)autoTimer=setTimeout(done,3500);return}const synth=window.speechSynthesis;const voices=synth.getVoices();const prefix=hindi()?'hi':'en';const chosen=voices.find(v=>v.lang.toLowerCase()===language.toLowerCase())||voices.find(v=>v.lang.toLowerCase().startsWith(prefix));if(hindi()&&!chosen){status('Hindi voice unavailable. Check your phone text-to-speech settings.');playing=false;return}const u=new SpeechSynthesisUtterance(message);u.lang=language;u.rate=.85;u.pitch=1;if(chosen)u.voice=chosen;u.onend=()=>{if(token===runId&&done)done()};u.onerror=()=>{if(token===runId){playing=false;status('Voice stopped unexpectedly. Try Start again.')}};synth.speak(u)}
+function startLesson(){stopAll();playing=true;stepIndex=0;breathCount=0;if(currentLesson===1)runBreathing();else runStep()}
+function runStep(){if(!playing||paused||currentLesson<2)return;const lesson=lessons[currentLesson],token=runId,p=document.getElementById('instruction');if(stepIndex>=lesson.steps.length){playing=false;p.textContent=hindi()?`बहुत अच्छा! आपने पाठ ${currentLesson} पूरा कर लिया है।`:`Wonderful! You have completed Lesson ${currentLesson}.`;speakText(p.textContent,null,token);return}p.textContent=lesson.steps[stepIndex][hindi()?1:0];status(`${hindi()?'चरण':'Step'} ${stepIndex+1} / 5`);speakText(p.textContent,()=>{if(token!==runId||!playing||paused)return;stepIndex++;autoTimer=setTimeout(()=>{autoTimer=null;runStep()},3500)},token)}
+function runBreathing(){if(!playing||paused||currentLesson!==1)return;const p=document.getElementById('instruction'),circle=document.getElementById('circle'),token=runId;if(breathCount>=10){playing=false;p.textContent=hindi()?'अभ्यास पूरा हुआ। सहज साँस लें।':'Exercise complete. Breathe naturally.';circle.textContent='🌿';speakText(p.textContent,null,token);return}const inhale=breathCount%2===0;p.textContent=hindi()?(inhale?'धीरे से साँस अंदर लें।':'धीरे से साँस बाहर छोड़ें।'):(inhale?'Breathe in gently.':'Breathe out slowly.');circle.textContent=hindi()?(inhale?'साँस लें':'साँस छोड़ें'):(inhale?'Inhale':'Exhale');circle.style.transform=inhale?'scale(1.3)':'scale(1)';breathCount++;speakText(p.textContent,null,token);autoTimer=setTimeout(()=>{autoTimer=null;runBreathing()},4000)}
+function pauseLesson(){if(!playing||paused)return;paused=true;clearAuto();stopVoice();status(hindi()?'रुका हुआ है। Resume दबाएँ।':'Paused. Press Resume.')}
+function resumeLesson(){if(!playing||!paused)return;paused=false;stopVoice();if(currentLesson===1)runBreathing();else runStep()}
+function stopLesson(){stopAll();const p=document.getElementById('instruction'),circle=document.getElementById('circle');if(p)p.textContent=hindi()?'अभ्यास बंद हुआ। फिर शुरू करने के लिए Start दबाएँ।':'Stopped. Press Start to begin again.';if(circle){circle.textContent='Breathe';circle.style.transform='scale(1)'}status('')}
+function testVoice(){stopAll();const message=hindi()?'आराम से बैठें। अपने कंधों को ढीला छोड़ दें। धीरे से साँस लें।':'Sit comfortably. Relax your shoulders. Take a gentle breath.';speakText(message,null,runId)}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing)pauseLesson()});showHome();
+</script></body></html>
